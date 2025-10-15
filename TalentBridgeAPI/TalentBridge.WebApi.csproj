@@ -10,4 +10,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TalentBridge.Application\TalentBridge.Application.csproj" />
+    <ProjectReference Include="..\TalentBridge.Infrastructure\TalentBridge.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,23 +1,29 @@
-﻿using TalentBridge.Application.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using TalentBridge.Application.Interfaces;
 using TalentBridge.Domain.Entities;
+using TalentBridge.Infrastructure.Data;
 
 namespace TalentBridge.Infrastructure.Repositories
 {
     public class AuthRepository : IAuthRepository
     {
-        private static readonly List<User> _users = new();
+        private readonly ApplicationDbContext _context;
 
-        public Task<User?> GetByEmailAsync(string email)
+        public AuthRepository(ApplicationDbContext context)
         {
-            var user = _users.FirstOrDefault(u => u.Email == email);
-            return Task.FromResult(user);
+            _context = context;
         }
 
-        public Task AddAsync(User user)
+        public async Task<User?> GetByEmailAsync(string email)
         {
-            user.Id = _users.Count + 1;
-            _users.Add(user);
-            return Task.CompletedTask;
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+        }
+
+        public async Task AddAsync(User user)
+        {
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
         }
     }
 }

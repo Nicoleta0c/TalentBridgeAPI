@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <None Include="DTOs\JobDTOs\JobDtos.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TalentBridge.Domain\TalentBridge.Domain.csproj" />
   </ItemGroup>
 

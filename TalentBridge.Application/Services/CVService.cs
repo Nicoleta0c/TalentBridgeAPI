@@ -1,4 +1,9 @@
-﻿using TalentBridge.Application.DTOs;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TalentBridge.Application.DTOs;
+using TalentBridge.Application.DTOs.CVDTOs;
 using TalentBridge.Application.Interfaces;
 using TalentBridge.Application.Interfaces.IUser;
 using TalentBridge.Domain.Entities;
@@ -28,6 +33,23 @@ namespace TalentBridge.Application.Services
             return cvs.Select(MapToCVDto);
         }
 
+        public async Task<IEnumerable<CVDto>> GetAllCVsAsync()
+        {
+            var cvs = await _cvRepository.GetAllAsync();
+            return cvs.Select(MapToCVDto);
+        }
+
+        public async Task<IEnumerable<CVDto>> GetCVsByUserIdAsync(int userId)
+        {
+            return await GetUserCVsAsync(userId);
+        }
+
+        public async Task<CVDto?> GetActiveCVByUserIdAsync(int userId)
+        {
+            var cv = await _cvRepository.GetActiveCVByUserIdAsync(userId);
+            return cv != null ? MapToCVDto(cv) : null;
+        }
+
         public async Task<CVDto> UploadCVAsync(UploadCVDto uploadCVDto)
         {
             var user = await _userRepository.GetByIdAsync(uploadCVDto.UserId);
@@ -51,18 +73,24 @@ namespace TalentBridge.Application.Services
             return MapToCVDto(cv);
         }
 
-        public async Task<CVDto?> UpdateCVAsync(int id, UploadCVDto updateCVDto)
+        public async Task<bool> UpdateCVAsync(int id, UpdateCVDto updateCVDto)
         {
             var cv = await _cvRepository.GetByIdAsync(id);
-            if (cv == null) return null;
+            if (cv == null) return false;
 
-            cv.FileName = updateCVDto.FileName;
-            cv.FileType = updateCVDto.FileType;
-            cv.FileSize = updateCVDto.FileSize;
-            cv.FilePath = $"/cvs/{cv.UserId}/{Guid.NewGuid()}_{updateCVDto.FileName}";
+            // Solo actualizar si hay valores proporcionados
+            if (!string.IsNullOrEmpty(updateCVDto.FileName))
+                cv.FileName = updateCVDto.FileName;
+
+            if (!string.IsNullOrEmpty(updateCVDto.AnalysisResult))
+                cv.AnalysisResult = updateCVDto.AnalysisResult;
+
+            cv.Score = updateCVDto.Score;
+            cv.IsActive = updateCVDto.IsActive;
+            cv.UpdatedAt = DateTime.UtcNow;
 
             await _cvRepository.UpdateAsync(cv);
-            return MapToCVDto(cv);
+            return true;
         }
 
         public async Task<bool> DeleteCVAsync(int id)
@@ -80,12 +108,13 @@ namespace TalentBridge.Application.Services
             if (cv == null)
                 throw new InvalidOperationException("CV no encontrado");
 
-            // MOCK de análisis con IA (por ahora simulado)
+            // MOCK de análisis con IA
             var analysisResult = await MockAIAnalysis(cv, analyzeRequest.JobDescription);
 
             // Actualizar el CV con el resultado del análisis
             cv.AnalysisResult = System.Text.Json.JsonSerializer.Serialize(analysisResult);
             cv.Score = analysisResult.Score;
+            cv.UpdatedAt = DateTime.UtcNow;
             await _cvRepository.UpdateAsync(cv);
 
             return analysisResult;
@@ -93,8 +122,8 @@ namespace TalentBridge.Application.Services
 
         private async Task<CVAnalysisResultDto> MockAIAnalysis(CV cv, string? jobDescription)
         {
-            // Simular procesamiento de IA (Aquí integrarías con OpenAI API)
-            await Task.Delay(1000); 
+            // Simular procesamiento de IA
+            await Task.Delay(1000);
 
             var random = new Random();
             var score = random.Next(60, 95);

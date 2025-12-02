@@ -1,4 +1,8 @@
-﻿using TalentBridge.Application.DTOs;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TalentBridge.Application.DTOs.JobDTOs;
 using TalentBridge.Application.Interfaces;
 using TalentBridge.Application.Interfaces.IUser;
 using TalentBridge.Domain.Entities;
@@ -10,33 +14,36 @@ namespace TalentBridge.Application.Services
         private readonly IJobRepository _jobRepository;
         private readonly IJobApplicationRepository _jobApplicationRepository;
         private readonly IUserRepository _userRepository;
+        private readonly ICVRepository _cvRepository;
 
         public JobService(
             IJobRepository jobRepository,
             IJobApplicationRepository jobApplicationRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            ICVRepository cvRepository)
         {
             _jobRepository = jobRepository;
             _jobApplicationRepository = jobApplicationRepository;
             _userRepository = userRepository;
+            _cvRepository = cvRepository;
         }
 
-        public async Task<JobDto?> GetJobByIdAsync(int id)
+        public async Task<IEnumerable<JobDto>> GetAllJobsAsync(bool activeOnly = true)
+        {
+            var jobs = activeOnly ?
+                await _jobRepository.GetActiveJobsAsync() :
+                await _jobRepository.GetAllAsync();
+
+            return jobs.Select(MapToJobDto);
+        }
+
+        public async Task<JobDto> GetJobByIdAsync(int id)
         {
             var job = await _jobRepository.GetByIdAsync(id);
-            return job != null ? MapToJobDto(job) : null;
-        }
+            if (job == null)
+                throw new KeyNotFoundException("Job not found");
 
-        public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
-        {
-            var jobs = await _jobRepository.GetAllAsync();
-            return jobs.Select(MapToJobDto);
-        }
-
-        public async Task<IEnumerable<JobDto>> GetActiveJobsAsync()
-        {
-            var jobs = await _jobRepository.GetActiveJobsAsync();
-            return jobs.Select(MapToJobDto);
+            return MapToJobDto(job);
         }
 
         public async Task<JobDto> CreateJobAsync(CreateJobDto createJobDto)
@@ -58,22 +65,37 @@ namespace TalentBridge.Application.Services
             return MapToJobDto(job);
         }
 
-        public async Task<JobDto?> UpdateJobAsync(int id, CreateJobDto updateJobDto)
+        public async Task<bool> UpdateJobAsync(int id, UpdateJobDto updateJobDto)
         {
             var job = await _jobRepository.GetByIdAsync(id);
-            if (job == null) return null;
+            if (job == null) return false;
 
-            job.Title = updateJobDto.Title;
-            job.Company = updateJobDto.Company;
-            job.Description = updateJobDto.Description;
-            job.Requirements = updateJobDto.Requirements;
-            job.Location = updateJobDto.Location;
-            job.SalaryRange = updateJobDto.SalaryRange;
-            job.JobType = updateJobDto.JobType;
+            if (!string.IsNullOrEmpty(updateJobDto.Title))
+                job.Title = updateJobDto.Title;
+
+            if (!string.IsNullOrEmpty(updateJobDto.Company))
+                job.Company = updateJobDto.Company;
+
+            if (!string.IsNullOrEmpty(updateJobDto.Description))
+                job.Description = updateJobDto.Description;
+
+            if (!string.IsNullOrEmpty(updateJobDto.Requirements))
+                job.Requirements = updateJobDto.Requirements;
+
+            if (!string.IsNullOrEmpty(updateJobDto.Location))
+                job.Location = updateJobDto.Location;
+
+            if (!string.IsNullOrEmpty(updateJobDto.SalaryRange))
+                job.SalaryRange = updateJobDto.SalaryRange;
+
+            if (!string.IsNullOrEmpty(updateJobDto.JobType))
+                job.JobType = updateJobDto.JobType;
+
+            job.IsActive = updateJobDto.IsActive;
             job.UpdatedAt = DateTime.UtcNow;
 
             await _jobRepository.UpdateAsync(job);
-            return MapToJobDto(job);
+            return true;
         }
 
         public async Task<bool> DeleteJobAsync(int id)
@@ -95,12 +117,16 @@ namespace TalentBridge.Application.Services
             if (job == null || !job.IsActive)
                 throw new InvalidOperationException("La vacante no existe o no está disponible");
 
+            var cv = await _cvRepository.GetByIdAsync(applyDto.CVId);
+            if (cv == null || cv.UserId != userId || !cv.IsActive)
+                throw new InvalidOperationException("CV no válido o no disponible");
+
             var application = new JobApplication
             {
                 JobId = applyDto.JobId,
                 UserId = userId,
                 CVId = applyDto.CVId,
-                CoverLetter = applyDto.CoverLetter,
+                CoverLetter = applyDto.CoverLetter ?? string.Empty,
                 Status = "Applied",
                 AppliedDate = DateTime.UtcNow
             };
@@ -109,25 +135,24 @@ namespace TalentBridge.Application.Services
 
             var user = await _userRepository.GetByIdAsync(userId);
 
-            return new JobApplicationDto
-            {
-                Id = application.Id,
-                JobId = application.JobId,
-                UserId = application.UserId,
-                CVId = application.CVId,
-                Status = application.Status,
-                AppliedDate = application.AppliedDate,
-                CoverLetter = application.CoverLetter,
-                JobTitle = job.Title,
-                Company = job.Company,
-                UserName = user?.FullName ?? "Usuario"
-            };
+            return MapToJobApplicationDto(application, job, user, cv);
         }
 
         public async Task<IEnumerable<JobApplicationDto>> GetUserApplicationsAsync(int userId)
         {
             var applications = await _jobApplicationRepository.GetByUserIdAsync(userId);
-            return applications.Select(MapToJobApplicationDto);
+            var result = new List<JobApplicationDto>();
+
+            foreach (var application in applications)
+            {
+                var job = application.Job;
+                var user = application.User;
+                var cv = await _cvRepository.GetByIdAsync(application.CVId);
+
+                result.Add(MapToJobApplicationDto(application, job, user, cv));
+            }
+
+            return result;
         }
 
         public async Task<JobApplicationDto?> UpdateApplicationStatusAsync(int applicationId, string status)
@@ -138,7 +163,11 @@ namespace TalentBridge.Application.Services
             application.Status = status;
             await _jobApplicationRepository.UpdateAsync(application);
 
-            return MapToJobApplicationDto(application);
+            var job = application.Job;
+            var user = application.User;
+            var cv = await _cvRepository.GetByIdAsync(application.CVId);
+
+            return MapToJobApplicationDto(application, job, user, cv);
         }
 
         private static JobDto MapToJobDto(Job job)
@@ -154,11 +183,17 @@ namespace TalentBridge.Application.Services
                 SalaryRange = job.SalaryRange,
                 JobType = job.JobType,
                 IsActive = job.IsActive,
-                PostedDate = job.PostedDate
+                PostedDate = job.PostedDate,
+                UpdatedAt = job.UpdatedAt,
+                ApplicationCount = 0 
             };
         }
 
-        private static JobApplicationDto MapToJobApplicationDto(JobApplication application)
+        private static JobApplicationDto MapToJobApplicationDto(
+            JobApplication application,
+            Job? job,
+            User? user,
+            CV? cv)
         {
             return new JobApplicationDto
             {
@@ -168,10 +203,12 @@ namespace TalentBridge.Application.Services
                 CVId = application.CVId,
                 Status = application.Status,
                 AppliedDate = application.AppliedDate,
-                CoverLetter = application.CoverLetter,
-                JobTitle = application.Job?.Title ?? string.Empty,
-                Company = application.Job?.Company ?? string.Empty,
-                UserName = application.User?.FullName ?? string.Empty
+                CoverLetter = application.CoverLetter ?? string.Empty,
+                JobTitle = job?.Title ?? string.Empty,
+                CompanyName = job?.Company ?? string.Empty, 
+                UserFullName = user?.FullName ?? string.Empty, 
+                UserEmail = user?.Email ?? string.Empty,
+                CVFileName = cv?.FileName ?? string.Empty
             };
         }
     }

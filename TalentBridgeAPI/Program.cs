@@ -1,18 +1,23 @@
-using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
+using TalentBridge.Application.DTOs.CVDTOs;
+using TalentBridge.Application.DTOs.UserDTOs;
 using TalentBridge.Application.Interfaces;
 using TalentBridge.Application.Interfaces.IUser;
 using TalentBridge.Application.Services;
 using TalentBridge.Application.Settings;
+using TalentBridge.Application.Validations;
 using TalentBridge.Infrastructure.Data;
 using TalentBridge.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ============ JWT CONFIGURATION ============
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
 
@@ -21,7 +26,6 @@ if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))
     throw new InvalidOperationException("JWT Settings are not configured properly");
 }
 
-// ============ AUTHENTICATION ============
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -44,10 +48,21 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ============ CONTROLLERS ============
-builder.Services.AddControllers();
+builder.Services.AddScoped<IValidator<RegisterRequestDto>, RegisterRequestValidator>();
+builder.Services.AddScoped<IValidator<LoginRequestDto>, LoginRequestValidator>();
+builder.Services.AddScoped<IValidator<RefreshTokenRequestDto>, RefreshTokenRequestValidator>();
+builder.Services.AddScoped<IValidator<RevokeTokenRequest>, RevokeTokenRequestValidator>();
+builder.Services.AddScoped<IValidator<UpdateCVDto>, UpdateCVDtoValidator>();
+builder.Services.AddScoped<IValidator<CreateAdminDto>, CreateAdminDtoValidator>();
 
-// ============ SWAGGER/OPENAPI ============
+builder.Services.AddControllers()
+    .AddFluentValidation(fv =>
+    {
+        fv.RegisterValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+        fv.AutomaticValidationEnabled = true;
+        fv.ImplicitlyValidateChildProperties = true;
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -58,7 +73,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API for TalentBridge Application with JWT Authentication"
     });
 
-    // JWT Authentication in Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below. Example: 'Bearer 12345abcdef'",
@@ -84,7 +98,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ============ CORS ============
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -95,11 +108,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ============ DATABASE ============
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ============ SERVICES ============
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -112,7 +123,6 @@ builder.Services.AddScoped<IJobService, JobService>();
 
 var app = builder.Build();
 
-// ============ MIDDLEWARE PIPELINE ============
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -120,13 +130,6 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "TalentBridge API V1");
     });
-
-    // Crear base de datos automáticamente en desarrollo
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        context.Database.EnsureCreated();
-    }
 }
 
 app.UseHttpsRedirection();

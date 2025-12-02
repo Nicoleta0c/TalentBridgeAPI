@@ -9,6 +9,7 @@ namespace TalentBridge.Application.DTOs
     public class AnalyzeCVRequestDto
     {
         public int          CVId                { get; set; }
-        public string?      JobDescription      { get; set; } 
+        public int          JobId               { get; set; } 
+        public string?      JobDescription      { get; set; }
     }
 }

@@ -2,7 +2,6 @@
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using TalentBridge.Application.DTOs;
 using TalentBridge.Application.DTOs.UserDTOs;
@@ -48,7 +47,7 @@ namespace TalentBridge.Application.Services
             await _authRepository.AddAsync(user);
 
             var token = GenerateJwtToken(user);
-            var refreshToken = await GenerateRefreshToken(user.Id);
+            var refreshToken = await _authRepository.GenerateAndSaveRefreshTokenAsync(user.Id);
 
             return new AuthResultDto
             {
@@ -57,13 +56,7 @@ namespace TalentBridge.Application.Services
                 Token = token,
                 RefreshToken = refreshToken,
                 TokenExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
-                User = new UserDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    Role = user.Role
-                }
+                User = MapToUserDto(user)
             };
         }
 
@@ -90,7 +83,7 @@ namespace TalentBridge.Application.Services
             }
 
             var token = GenerateJwtToken(user);
-            var refreshToken = await GenerateRefreshToken(user.Id);
+            var refreshToken = await _authRepository.GenerateAndSaveRefreshTokenAsync(user.Id);
 
             return new AuthResultDto
             {
@@ -99,28 +92,71 @@ namespace TalentBridge.Application.Services
                 Token = token,
                 RefreshToken = refreshToken,
                 TokenExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
-                User = new UserDto
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    Role = user.Role
-                }
+                User = MapToUserDto(user)
             };
         }
 
         public async Task<AuthResultDto> RefreshTokenAsync(string refreshToken)
         {
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return new AuthResultDto
+                {
+                    Success = false,
+                    Message = "Refresh token es requerido"
+                };
+            }
+
+            var storedToken = await _authRepository.GetValidRefreshTokenAsync(refreshToken);
+
+            if (storedToken == null)
+            {
+                return new AuthResultDto
+                {
+                    Success = false,
+                    Message = "Refresh token inválido o expirado"
+                };
+            }
+
+            var user = storedToken.User;
+            if (user == null || !user.IsActive)
+            {
+                return new AuthResultDto
+                {
+                    Success = false,
+                    Message = "Usuario no encontrado o inactivo"
+                };
+            }
+
+            storedToken.IsRevoked = true;
+            //storedToken.RevokedAt = DateTime.UtcNow;
+            await _authRepository.UpdateRefreshTokenAsync(storedToken);
+
+            var newJwtToken = GenerateJwtToken(user);
+            var newRefreshToken = await _authRepository.GenerateAndSaveRefreshTokenAsync(user.Id);
+
             return new AuthResultDto
             {
-                Success = false,
-                Message = "Implementar refresh token con repositorio"
+                Success = true,
+                Message = "Token refrescado exitosamente",
+                Token = newJwtToken,
+                RefreshToken = newRefreshToken,
+                TokenExpiration = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
+                User = MapToUserDto(user)
             };
         }
 
         public async Task RevokeTokenAsync(string refreshToken)
         {
-            await Task.CompletedTask;
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                await _authRepository.RevokeRefreshTokenAsync(refreshToken);
+            }
+        }
+
+        public async Task RevokeAllTokensAsync(int userId)
+        {
+            await _authRepository.RevokeAllRefreshTokensForUserAsync(userId);
         }
 
         private string GenerateJwtToken(User user)
@@ -152,12 +188,17 @@ namespace TalentBridge.Application.Services
             return tokenHandler.WriteToken(token);
         }
 
-        private async Task<string> GenerateRefreshToken(int userId)
+        private UserDto MapToUserDto(User user)
         {
-            var randomBytes = new byte[64];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
+            return new UserDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            };
         }
     }
 }

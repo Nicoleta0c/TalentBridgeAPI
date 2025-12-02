@@ -15,5 +15,6 @@ namespace TalentBridge.Application.Interfaces
         Task<UserDto> CreateUserAsync(CreateUserDto createUserDto);
         Task<UserDto?> UpdateUserAsync(int id, UpdateUserDto updateUserDto);
         Task<bool> DeleteUserAsync(int id);
+        Task<UserDto> CreateAdminAsync(CreateAdminDto createAdminDto);
     }
 }

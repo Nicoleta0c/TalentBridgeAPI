@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TalentBridge.Application.DTOs.JobDTOs
 {
-    public class CreateJobDto
+    public class UpdateJobDto
     {
         public string Title { get; set; } = string.Empty;
         public string Company { get; set; } = string.Empty;
@@ -15,10 +15,6 @@ namespace TalentBridge.Application.DTOs.JobDTOs
         public string Location { get; set; } = string.Empty;
         public string SalaryRange { get; set; } = string.Empty;
         public string JobType { get; set; } = string.Empty;
-        public string Benefits { get; set; } = string.Empty;
-        public string ContactEmail { get; set; } = string.Empty;
-        public string ContactPhone { get; set; } = string.Empty;
-        public string ExperienceLevel { get; set; } = string.Empty;
-        public string EducationLevel { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
     }
 }

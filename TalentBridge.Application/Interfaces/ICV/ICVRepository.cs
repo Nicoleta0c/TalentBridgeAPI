@@ -12,6 +12,7 @@ namespace TalentBridge.Application.Interfaces
         Task<CV?> GetByIdAsync(int id);
         Task<IEnumerable<CV>> GetByUserIdAsync(int userId);
         Task<CV?> GetActiveCVByUserIdAsync(int userId);
+        Task<IEnumerable<CV>> GetAllAsync(); 
         Task AddAsync(CV cv);
         Task UpdateAsync(CV cv);
         Task DeleteAsync(CV cv);

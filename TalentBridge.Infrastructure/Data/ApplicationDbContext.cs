@@ -6,13 +6,13 @@ namespace TalentBridge.Infrastructure.Data
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) {
-
         }
 
         public DbSet<User> Users { get; set; }
         public DbSet<Job> Jobs { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
         public DbSet<CV> CVs { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; } // NUEVO
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,8 +25,24 @@ namespace TalentBridge.Infrastructure.Data
                 entity.Property(u => u.FullName).IsRequired().HasMaxLength(100);
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
                 entity.Property(u => u.PasswordHash).IsRequired().HasMaxLength(500);
+                entity.Property(u => u.Role).IsRequired().HasMaxLength(50).HasDefaultValue("User"); // NUEVO
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.Property(u => u.Id).ValueGeneratedOnAdd();
+            });
+
+            // RefreshToken configuration - NUEVO
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(rt => rt.Id);
+                entity.Property(rt => rt.Token).IsRequired().HasMaxLength(500);
+                entity.HasIndex(rt => rt.Token).IsUnique();
+
+                entity.HasOne(rt => rt.User)
+                    .WithMany()
+                    .HasForeignKey(rt => rt.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(rt => rt.Id).ValueGeneratedOnAdd();
             });
 
             // Job configuration

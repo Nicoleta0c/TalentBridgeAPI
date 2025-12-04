@@ -608,10 +608,10 @@ GET    /api/mentors                      # Todos los mentores
 ## 👥 **Equipo de Desarrollo**
 
 ### **Desarrolladores**
-- **Mayory Astacio Reyna** (2023-0272) - Backend & Database
-- **Scarlette Isabel Moya Hernández** (2023-0274) - Frontend & UI/UX
-- **Nicolle Rosa Andújar** (2023-1075) - AI Integration & Analytics
-- **Bily Manuel Alvarez Sánchez** (2023-0952) - DevOps & Infrastructure
+- **Mayory Astacio Reyna** (2023-0272)
+- **Scarlette Isabel Moya Hernández** (2023-0274) 
+- **Nicolle Rosa Andújar** (2023-1075) 
+- **Bily Manuel Alvarez Sánchez** (2023-0952)
 
 ### **Asesor**
 - **Willis Ezequiel Polanco Caraballo** - Coordinador del Proyecto

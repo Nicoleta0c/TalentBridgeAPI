@@ -6,6 +6,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using TalentBridge.API.DTOs.CommunityDTOs;
+using TalentBridge.API.DTOs.MentorshipDTOs;
+using TalentBridge.API.Interfaces.ICommunity;
+using TalentBridge.API.Interfaces.IMentorship;
+using TalentBridge.API.Services;
+using TalentBridge.API.Services.MentorshipServices;
+using TalentBridge.API.Validations;
+using TalentBridge.API.Validations.MentorshipValidators;
+using TalentBridge.Application.DTOs.CommentsDTOs;
 using TalentBridge.Application.DTOs.CVDTOs;
 using TalentBridge.Application.DTOs.UserDTOs;
 using TalentBridge.Application.Interfaces;
@@ -15,6 +24,7 @@ using TalentBridge.Application.Settings;
 using TalentBridge.Application.Validations;
 using TalentBridge.Infrastructure.Data;
 using TalentBridge.Infrastructure.Repositories;
+using TalentBridge.Infrastructure.Repositories.MentorshipRepositories; // AÑADIR ESTO
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +64,29 @@ builder.Services.AddScoped<IValidator<RefreshTokenRequestDto>, RefreshTokenReque
 builder.Services.AddScoped<IValidator<RevokeTokenRequest>, RevokeTokenRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateCVDto>, UpdateCVDtoValidator>();
 builder.Services.AddScoped<IValidator<CreateAdminDto>, CreateAdminDtoValidator>();
+builder.Services.AddScoped<IValidator<CreateUniversityDto>, CreateUniversityValidator>();
+builder.Services.AddScoped<IValidator<UpdateUniversityDto>, UpdateUniversityValidator>();
+builder.Services.AddScoped<IValidator<CreateCareerDto>, CreateCareerValidator>();
+builder.Services.AddScoped<IValidator<CreateCommunityDto>, CreateCommunityValidator>();
+builder.Services.AddScoped<IValidator<UpdateCommunityDto>, UpdateCommunityValidator>();
+builder.Services.AddScoped<IValidator<CreatePostDto>, CreatePostValidator>();
+builder.Services.AddScoped<IValidator<UpdatePostDto>, UpdatePostValidator>();
+builder.Services.AddScoped<IValidator<CreateCommentDto>, CreateCommentValidator>();
+builder.Services.AddScoped<IValidator<UpdateCommentDto>, UpdateCommentValidator>();
+builder.Services.AddScoped<IValidator<UpdateMemberRoleDto>, UpdateMemberRoleValidator>();
+builder.Services.AddScoped<IValidator<CreateMentorshipDto>, CreateMentorshipValidator>();
+builder.Services.AddScoped<IValidator<UpdateMentorshipDto>, UpdateMentorshipValidator>();
+builder.Services.AddScoped<IValidator<CreateSessionDto>, CreateSessionValidator>();
+builder.Services.AddScoped<IValidator<UpdateSessionDto>, UpdateSessionValidator>();
+builder.Services.AddScoped<IValidator<UpdateAttendanceDto>, UpdateAttendanceValidator>();
+builder.Services.AddScoped<IValidator<CreateMilestoneDto>, CreateMilestoneValidator>();
+builder.Services.AddScoped<IValidator<UpdateMilestoneDto>, UpdateMilestoneValidator>();
+builder.Services.AddScoped<IValidator<CreateResourceDto>, CreateResourceValidator>();
+builder.Services.AddScoped<IValidator<UpdateResourceDto>, UpdateResourceValidator>();
+builder.Services.AddScoped<IValidator<CreateMentorshipRequestDto>, CreateMentorshipRequestValidator>();
+builder.Services.AddScoped<IValidator<CreateMentorApplicationDto>, CreateMentorApplicationValidator>();
+builder.Services.AddScoped<IValidator<UpdateMentorProfileDto>, UpdateMentorProfileValidator>();
+builder.Services.AddScoped<IValidator<SearchMentorsDto>, SearchMentorsValidator>();
 
 builder.Services.AddControllers()
     .AddFluentValidation(fv =>
@@ -108,9 +141,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+// AÑADE SQLite si es lo que usas, o cambia a SQL Server si prefieres
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// SERVICIOS DE AUTENTICACIÓN Y USUARIO
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -120,8 +155,40 @@ builder.Services.AddScoped<ICVService, CVService>();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IJobApplicationRepository, JobApplicationRepository>();
 builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<IUniversityRepository, UniversityRepository>();
+builder.Services.AddScoped<IUniversityCareerRepository, UniversityCareerRepository>();
+builder.Services.AddScoped<IUniversityService, UniversityService>();
+builder.Services.AddScoped<ICommunityRepository, CommunityRepository>();
+builder.Services.AddScoped<ICommunityMemberRepository, CommunityMemberRepository>();
+builder.Services.AddScoped<ICommunityPostRepository, CommunityPostRepository>();
+builder.Services.AddScoped<ICommunityCommentRepository, CommunityCommentRepository>();
+builder.Services.AddScoped<IPostLikeRepository, PostLikeRepository>();
+builder.Services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
+builder.Services.AddScoped<ICommunityService, CommunityService>();
+builder.Services.AddScoped<ICommunityPostService, CommunityPostService>();
+builder.Services.AddScoped<ICommunityCommentService, CommunityCommentService>();
+
+// AÑADE ESTOS SERVICIOS DE MENTORÍA (FALTANTES)
+builder.Services.AddScoped<IMentorshipRepository, MentorshipRepository>();
+builder.Services.AddScoped<IMentorshipSessionRepository, MentorshipSessionRepository>();
+builder.Services.AddScoped<IMentorshipMilestoneRepository, MentorshipMilestoneRepository>();
+builder.Services.AddScoped<IMentorshipResourceRepository, MentorshipResourceRepository>();
+builder.Services.AddScoped<IMentorshipRequestRepository, MentorshipRequestRepository>();
+builder.Services.AddScoped<IMentorApplicationRepository, MentorApplicationRepository>();
+builder.Services.AddScoped<ISessionAttendanceRepository, SessionAttendanceRepository>();
+builder.Services.AddScoped<IMentorshipService, MentorshipService>();
+
+// Agrega también el DatabaseSeeder si lo necesitas
+builder.Services.AddScoped<DatabaseSeeder>();
 
 var app = builder.Build();
+
+// Middleware para ejecutar el seeder (opcional)
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    await seeder.SeedAdminAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {

@@ -9,10 +9,12 @@ namespace TalentBridge.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IAuthRepository _authRepository; // Añade esta dependencia
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, IAuthRepository authRepository) // Modifica el constructor
         {
             _userRepository = userRepository;
+            _authRepository = authRepository;
         }
 
         public async Task<UserDto?> GetUserByIdAsync(int id)
@@ -72,6 +74,29 @@ namespace TalentBridge.Application.Services
             return true;
         }
 
+        public async Task<UserDto> CreateAdminAsync(CreateAdminDto createAdminDto)
+        {
+            var existingUser = await _authRepository.GetByEmailAsync(createAdminDto.Email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("Email already exists");
+            }
+
+            var user = new User
+            {
+                FullName = createAdminDto.FullName,
+                Email = createAdminDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(createAdminDto.Password),
+                Role = "Admin",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _authRepository.AddAsync(user);
+
+            return MapToDto(user); 
+        }
+
         private static UserDto MapToDto(User user)
         {
             return new UserDto
@@ -79,8 +104,10 @@ namespace TalentBridge.Application.Services
                 Id = user.Id,
                 FullName = user.FullName,
                 Email = user.Email,
+                Role = user.Role, 
                 IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                //UpdatedAt = user.UpdatedAt
             };
         }
 

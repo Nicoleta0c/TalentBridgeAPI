@@ -11,5 +11,9 @@ namespace TalentBridge.Application.Interfaces
         Task<string> GenerateAndSaveRefreshTokenAsync(int userId);
         Task<bool> ValidateRefreshTokenAsync(int userId, string token);
         Task RevokeRefreshTokenAsync(string token);
+        Task<RefreshToken?> GetRefreshTokenAsync(string token);
+        Task<RefreshToken?> GetValidRefreshTokenAsync(string token);
+        Task UpdateRefreshTokenAsync(RefreshToken refreshToken);
+        Task RevokeAllRefreshTokensForUserAsync(int userId);
     }
 }

@@ -8,5 +8,6 @@ namespace TalentBridge.Application.Interfaces
         Task<AuthResultDto> LoginAsync(string email, string password);
         Task<AuthResultDto> RefreshTokenAsync(string refreshToken);
         Task RevokeTokenAsync(string refreshToken);
+        Task RevokeAllTokensAsync(int userId);
     }
 }

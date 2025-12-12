@@ -1,6 +1,7 @@
 ﻿namespace TalentBridge.API.DTOs.CommunityDTOs
 {
     public class CommunityDto
+
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;

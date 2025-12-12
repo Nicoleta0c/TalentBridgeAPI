@@ -14,17 +14,39 @@ namespace TalentBridge.Infrastructure.Repositories
             _context = context;
         }
 
+        /// <summary>
+        /// Obtiene comunidad CON AsNoTracking (para READ)
+        /// </summary>
         public async Task<Community?> GetByIdAsync(int id)
         {
             return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
                 .Where(c => c.Id == id)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
         }
 
+        /// <summary>
+        /// Obtiene comunidad SIN AsNoTracking (para UPDATE/DELETE)
+        /// </summary>
+        public async Task<Community?> GetByIdForUpdateAsync(int id)
+        {
+            return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
         public async Task<Community?> GetByIdWithDetailsAsync(int id)
         {
             return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
+                .Include(c => c.Members)
+                    .ThenInclude(m => m.User)
+                .Include(c => c.Posts)
+                    .ThenInclude(p => p.Author)
                 .Where(c => c.Id == id)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
@@ -33,6 +55,8 @@ namespace TalentBridge.Infrastructure.Repositories
         public async Task<IEnumerable<Community>> GetAllAsync()
         {
             return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
                 .OrderByDescending(c => c.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();
@@ -41,6 +65,8 @@ namespace TalentBridge.Infrastructure.Repositories
         public async Task<IEnumerable<Community>> GetByUniversityIdAsync(int universityId)
         {
             return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
                 .Where(c => c.UniversityId == universityId && c.IsActive)
                 .OrderByDescending(c => c.CreatedAt)
                 .AsNoTracking()
@@ -50,6 +76,8 @@ namespace TalentBridge.Infrastructure.Repositories
         public async Task<IEnumerable<Community>> GetPublicCommunitiesAsync()
         {
             return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
                 .Where(c => !c.IsPrivate && c.IsActive)
                 .OrderByDescending(c => c.TotalMembers)
                 .AsNoTracking()
@@ -59,6 +87,8 @@ namespace TalentBridge.Infrastructure.Repositories
         public async Task<IEnumerable<Community>> GetUserCommunitiesAsync(int userId)
         {
             return await _context.Communities
+                .Include(c => c.University)
+                .Include(c => c.CreatedBy)
                 .Where(c => c.Members.Any(m => m.UserId == userId && m.IsActive))
                 .OrderByDescending(c => c.CreatedAt)
                 .AsNoTracking()
@@ -82,7 +112,8 @@ namespace TalentBridge.Infrastructure.Repositories
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var community = await GetByIdAsync(id);
+            // ✅ Usar GetByIdForUpdateAsync para DELETE
+            var community = await GetByIdForUpdateAsync(id);
             if (community == null) return false;
 
             community.IsActive = false;
@@ -114,7 +145,10 @@ namespace TalentBridge.Infrastructure.Repositories
 
         public async Task UpdateStatsAsync(int communityId)
         {
-            var community = await GetByIdAsync(communityId);
+            // Obtener WITH tracking (sin AsNoTracking) para poder actualizar
+            var community = await _context.Communities
+                .FirstOrDefaultAsync(c => c.Id == communityId);
+
             if (community == null) return;
 
             community.TotalMembers = await GetMemberCountAsync(communityId);

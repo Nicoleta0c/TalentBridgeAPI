@@ -1,10 +1,11 @@
 ﻿using TalentBridge.Domain.Entities;
-
 namespace TalentBridge.API.Interfaces.ICommunity
 {
     public interface ICommunityRepository
     {
         Task<Community?> GetByIdAsync(int id);
+        Task<Community?> GetByIdForUpdateAsync(int id);
+
         Task<Community?> GetByIdWithDetailsAsync(int id);
         Task<IEnumerable<Community>> GetAllAsync();
         Task<IEnumerable<Community>> GetByUniversityIdAsync(int universityId);

@@ -176,7 +176,8 @@ namespace TalentBridge.API.Services
 
         public async Task<CommunityDto> UpdateAsync(int id, UpdateCommunityDto dto, int userId)
         {
-            var community = await _communityRepository.GetByIdAsync(id);
+            // ✅ Usar GetByIdForUpdateAsync para poder actualizar
+            var community = await _communityRepository.GetByIdForUpdateAsync(id);
             if (community == null)
             {
                 throw new KeyNotFoundException($"Comunidad con ID {id} no encontrada");
@@ -217,7 +218,8 @@ namespace TalentBridge.API.Services
 
         public async Task<bool> DeleteAsync(int id, int userId)
         {
-            var community = await _communityRepository.GetByIdAsync(id);
+            // Usar GetByIdForUpdateAsync para poder eliminar
+            var community = await _communityRepository.GetByIdForUpdateAsync(id);
             if (community == null)
             {
                 throw new KeyNotFoundException($"Comunidad con ID {id} no encontrada");
@@ -234,7 +236,8 @@ namespace TalentBridge.API.Services
 
         public async Task<bool> JoinCommunityAsync(int communityId, int userId)
         {
-            var community = await _communityRepository.GetByIdAsync(communityId);
+            // ✅ Usar GetByIdForUpdateAsync para obtener la comunidad
+            var community = await _communityRepository.GetByIdForUpdateAsync(communityId);
             if (community == null)
             {
                 throw new KeyNotFoundException($"Comunidad con ID {communityId} no encontrada");

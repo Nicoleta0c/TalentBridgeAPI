@@ -10,7 +10,6 @@ namespace TalentBridge.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class CVsController : ControllerBase
     {
         private readonly ICVService _cvService;

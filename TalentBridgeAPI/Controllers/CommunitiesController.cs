@@ -88,9 +88,7 @@ namespace TalentBridge.API.Controllers
         /// Obtiene las comunidades del usuario autenticado
         /// </summary>
         [HttpGet("my-communities")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<CommunityDto>>> GetMyCommunities()
         {
             try
@@ -169,10 +167,8 @@ namespace TalentBridge.API.Controllers
         /// Crea una nueva comunidad
         /// </summary>
         [HttpPost]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<CommunityDto>> Create([FromBody] CreateCommunityDto dto)
         {
             try
@@ -201,10 +197,8 @@ namespace TalentBridge.API.Controllers
         /// Actualiza una comunidad
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<CommunityDto>> Update(int id, [FromBody] UpdateCommunityDto dto)
         {
@@ -238,10 +232,8 @@ namespace TalentBridge.API.Controllers
         /// Elimina una comunidad
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Delete(int id)
         {
@@ -275,10 +267,8 @@ namespace TalentBridge.API.Controllers
         /// Unirse a una comunidad
         /// </summary>
         [HttpPost("{id}/join")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> JoinCommunity(int id)
         {
@@ -312,10 +302,8 @@ namespace TalentBridge.API.Controllers
         /// Salir de una comunidad
         /// </summary>
         [HttpPost("{id}/leave")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> LeaveCommunity(int id)
         {
             try
@@ -368,10 +356,8 @@ namespace TalentBridge.API.Controllers
         /// Actualiza el rol de un miembro
         /// </summary>
         [HttpPatch("{id}/members/role")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateMemberRole(int id, [FromBody] UpdateMemberRoleDto dto)
@@ -414,9 +400,7 @@ namespace TalentBridge.API.Controllers
         /// Remueve un miembro de la comunidad
         /// </summary>
         [HttpDelete("{id}/members/{memberId}")]
-        [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RemoveMember(int id, int memberId)

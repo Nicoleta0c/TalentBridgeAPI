@@ -9,9 +9,9 @@ namespace TalentBridge.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IAuthRepository _authRepository; // Añade esta dependencia
+        private readonly IAuthRepository _authRepository;
 
-        public UserService(IUserRepository userRepository, IAuthRepository authRepository) // Modifica el constructor
+        public UserService(IUserRepository userRepository, IAuthRepository authRepository)
         {
             _userRepository = userRepository;
             _authRepository = authRepository;
@@ -25,8 +25,20 @@ namespace TalentBridge.Application.Services
 
         public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
         {
+            // Obtén los users del repository
             var users = await _userRepository.GetAllAsync();
-            return users.Select(MapToDto);
+            
+            // Mapea a DTO ANTES de que ASP.NET intente serializar
+            // Los [JsonIgnore] en User.cs harán que se ignoren las propiedades corruptas
+            return users.Select(u => new UserDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                Role = u.Role,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt
+            }).ToList();
         }
 
         public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto)
@@ -106,8 +118,7 @@ namespace TalentBridge.Application.Services
                 Email = user.Email,
                 Role = user.Role, 
                 IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt,
-                //UpdatedAt = user.UpdatedAt
+                CreatedAt = user.CreatedAt
             };
         }
 

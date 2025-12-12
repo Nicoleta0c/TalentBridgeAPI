@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using TalentBridge.Domain.Enums;
 
@@ -43,8 +44,13 @@ namespace TalentBridge.Domain.Entities
         public string? MentorTitle { get; set; } // Ej: "Senior Software Engineer"
         public string? MentorBio { get; set; }
         public int? YearsOfExperience { get; set; }
+        
+        [JsonIgnore]
         public List<string> MentorExpertise { get; set; } = new List<string>();
+        
+        [JsonIgnore]
         public List<string> MentorIndustries { get; set; } = new List<string>();
+        
         public decimal? HourlyRate { get; set; }
         public bool AvailableForMentorship { get; set; } = false;
         public int MaxMentees { get; set; } = 3;
@@ -55,9 +61,13 @@ namespace TalentBridge.Domain.Entities
         public int? TotalMenteesHelped { get; set; } = 0;
 
         // Preferencias de mentoría
+        [JsonIgnore]
         public List<string> PreferredMentorshipCategories { get; set; } = new List<string>();
+        
         public MeetingMethod? PreferredMeetingMethod { get; set; }
         public string? Timezone { get; set; }
+        
+        [JsonIgnore]
         public string? AvailabilitySchedule { get; set; } // JSON con horarios disponibles
 
         // Relaciones de mentorías

@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TalentBridge.Application.DTOs.UserDTOs;
 using TalentBridge.Application.Interfaces;
@@ -9,7 +8,6 @@ namespace TalentBridge.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -30,7 +28,6 @@ namespace TalentBridge.WebAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers()
         {
             try
@@ -84,7 +81,6 @@ namespace TalentBridge.WebAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createUserDto)
         {
             var validationResult = await _createUserValidator.ValidateAsync(createUserDto);
@@ -172,7 +168,6 @@ namespace TalentBridge.WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             if (id <= 0)
@@ -202,7 +197,6 @@ namespace TalentBridge.WebAPI.Controllers
         }
 
         [HttpPost("admin")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminDto createAdminDto)
         {
             var validationResult = await _createAdminValidator.ValidateAsync(createAdminDto);

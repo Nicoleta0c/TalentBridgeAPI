@@ -109,13 +109,11 @@ namespace TalentBridge.API.Controllers
         }
 
         /// <summary>
-        /// Crea una nueva universidad (Solo Admin)
+        /// Crea una nueva universidad
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<UniversityDto>> Create([FromBody] CreateUniversityDto dto)
         {
             try
@@ -135,13 +133,11 @@ namespace TalentBridge.API.Controllers
         }
 
         /// <summary>
-        /// Actualiza una universidad existente (Solo Admin)
+        /// Actualiza una universidad existente
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<UniversityDto>> Update(int id, [FromBody] UpdateUniversityDto dto)
         {
             try
@@ -161,13 +157,11 @@ namespace TalentBridge.API.Controllers
         }
 
         /// <summary>
-        /// Elimina una universidad (Solo Admin)
+        /// Elimina una universidad
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -187,13 +181,11 @@ namespace TalentBridge.API.Controllers
         }
 
         /// <summary>
-        /// Verifica una universidad (Solo Admin)
+        /// Verifica una universidad
         /// </summary>
         [HttpPatch("{id}/verify")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Verify(int id)
         {
             try
@@ -237,13 +229,11 @@ namespace TalentBridge.API.Controllers
         }
 
         /// <summary>
-        /// Crea una nueva carrera para una universidad (Solo Admin)
+        /// Crea una nueva carrera para una universidad
         /// </summary>
         [HttpPost("careers")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<UniversityCareerDto>> CreateCareer([FromBody] CreateCareerDto dto)
         {
             try

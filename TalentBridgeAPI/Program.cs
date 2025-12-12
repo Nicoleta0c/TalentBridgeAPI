@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Security.Claims;
 using TalentBridge.API.DTOs.CommunityDTOs;
 using TalentBridge.API.DTOs.MentorshipDTOs;
 using TalentBridge.API.Interfaces.ICommunity;
@@ -24,7 +25,7 @@ using TalentBridge.Application.Settings;
 using TalentBridge.Application.Validations;
 using TalentBridge.Infrastructure.Data;
 using TalentBridge.Infrastructure.Repositories;
-using TalentBridge.Infrastructure.Repositories.MentorshipRepositories; // A—ADIR ESTO
+using TalentBridge.Infrastructure.Repositories.MentorshipRepositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,7 +53,30 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings.Issuer,
         ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.Secret)),
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        RoleClaimType = ClaimTypes.Role
+    };
+    
+    // EVENTOS DE DEBUG
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"‚ùå JWT FAILED: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var claims = context.Principal?.Claims;
+            var claimsList = claims?.Select(c => $"{c.Type}={c.Value}").ToList() ?? new();
+            Console.WriteLine($"‚úÖ JWT VALID. Claims: {string.Join(" | ", claimsList)}");
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            Console.WriteLine($"‚ö†Ô∏è JWT CHALLENGE: {context.ErrorDescription}");
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -141,11 +165,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// A—ADE SQLite si es lo que usas, o cambia a SQL Server si prefieres
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// SERVICIOS DE AUTENTICACI”N Y USUARIO
+// SERVICIOS DE AUTENTICACI√ìN Y USUARIO
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -168,7 +191,7 @@ builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<ICommunityPostService, CommunityPostService>();
 builder.Services.AddScoped<ICommunityCommentService, CommunityCommentService>();
 
-// A—ADE ESTOS SERVICIOS DE MENTORÕA (FALTANTES)
+// SERVICIOS DE MENTOR√çA
 builder.Services.AddScoped<IMentorshipRepository, MentorshipRepository>();
 builder.Services.AddScoped<IMentorshipSessionRepository, MentorshipSessionRepository>();
 builder.Services.AddScoped<IMentorshipMilestoneRepository, MentorshipMilestoneRepository>();
@@ -178,12 +201,10 @@ builder.Services.AddScoped<IMentorApplicationRepository, MentorApplicationReposi
 builder.Services.AddScoped<ISessionAttendanceRepository, SessionAttendanceRepository>();
 builder.Services.AddScoped<IMentorshipService, MentorshipService>();
 
-// Agrega tambiÈn el DatabaseSeeder si lo necesitas
 builder.Services.AddScoped<DatabaseSeeder>();
 
 var app = builder.Build();
 
-// Middleware para ejecutar el seeder (opcional)
 using (var scope = app.Services.CreateScope())
 {
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();

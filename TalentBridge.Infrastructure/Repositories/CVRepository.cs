@@ -17,34 +17,35 @@ namespace TalentBridge.Infrastructure.Repositories
         public async Task<IEnumerable<CV>> GetAllAsync()
         {
             return await _context.CVs
-                .Include(c => c.User)
                 .Where(c => c.IsActive)
                 .OrderByDescending(c => c.UploadDate)
+                .AsNoTracking()
                 .ToListAsync();
         }
 
         public async Task<CV?> GetByIdAsync(int id)
         {
             return await _context.CVs
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .Where(c => c.Id == id)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<CV>> GetByUserIdAsync(int userId)
         {
             return await _context.CVs
-                .Include(c => c.User)
                 .Where(c => c.UserId == userId && c.IsActive)
                 .OrderByDescending(c => c.UploadDate)
+                .AsNoTracking()
                 .ToListAsync();
         }
 
         public async Task<CV?> GetActiveCVByUserIdAsync(int userId)
         {
             return await _context.CVs
-                .Include(c => c.User)
                 .Where(c => c.UserId == userId && c.IsActive)
                 .OrderByDescending(c => c.UploadDate)
+                .AsNoTracking()
                 .FirstOrDefaultAsync();
         }
 

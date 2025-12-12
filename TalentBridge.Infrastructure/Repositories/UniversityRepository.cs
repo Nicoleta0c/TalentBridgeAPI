@@ -13,24 +13,24 @@ public class UniversityRepository : IUniversityRepository
     public async Task<University?> GetByIdAsync(int id)
     {
         return await _context.Universities
-            .FirstOrDefaultAsync(u => u.Id == id);
+            .Where(u => u.Id == id)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
     }
 
     public async Task<University?> GetByIdWithDetailsAsync(int id)
     {
         return await _context.Universities
-            .Include(u => u.Careers)
-            .Include(u => u.Communities)
-            .Include(u => u.Students)
-            .FirstOrDefaultAsync(u => u.Id == id);
+            .Where(u => u.Id == id)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<University>> GetAllAsync()
     {
         return await _context.Universities
-            .Include(u => u.Students)
-            .Include(u => u.Communities)
             .OrderBy(u => u.Name)
+            .AsNoTracking()
             .ToListAsync();
     }
 
@@ -38,16 +38,17 @@ public class UniversityRepository : IUniversityRepository
     {
         return await _context.Universities
             .Where(u => u.IsActive)
-            .Include(u => u.Students)
-            .Include(u => u.Communities)
             .OrderBy(u => u.Name)
+            .AsNoTracking()
             .ToListAsync();
     }
 
     public async Task<University?> GetByAcronymAsync(string acronym)
     {
         return await _context.Universities
-            .FirstOrDefaultAsync(u => u.Acronym.ToLower() == acronym.ToLower());
+            .Where(u => u.Acronym.ToLower() == acronym.ToLower())
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
     }
 
     public async Task<University> CreateAsync(University university)
@@ -69,7 +70,6 @@ public class UniversityRepository : IUniversityRepository
     {
         var university = await GetByIdAsync(id);
         if (university == null) return false;
-
         _context.Universities.Remove(university);
         await _context.SaveChangesAsync();
         return true;
@@ -77,24 +77,29 @@ public class UniversityRepository : IUniversityRepository
 
     public async Task<bool> ExistsAsync(int id)
     {
-        return await _context.Universities.AnyAsync(u => u.Id == id);
+        return await _context.Universities
+            .AsNoTracking()
+            .AnyAsync(u => u.Id == id);
     }
 
     public async Task<bool> ExistsByNameAsync(string name)
     {
         return await _context.Universities
+            .AsNoTracking()
             .AnyAsync(u => u.Name.ToLower() == name.ToLower());
     }
 
     public async Task<int> GetStudentCountAsync(int universityId)
     {
         return await _context.Users
+            .AsNoTracking()
             .CountAsync(u => u.UniversityId == universityId);
     }
 
     public async Task<int> GetCommunityCountAsync(int universityId)
     {
         return await _context.Communities
+            .AsNoTracking()
             .CountAsync(c => c.UniversityId == universityId);
     }
 }
